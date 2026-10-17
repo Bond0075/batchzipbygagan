@@ -1,0 +1,19 @@
+services:
+  batchzip:
+    build: .
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./server/.env
+    volumes:
+      # Persistent job data: batch files, ZIPs, job records
+      - batchzip-data:/data
+    restart: unless-stopped
+    # Give downloads room: tune to your MAX_FILE_SIZE_BYTES / MAX_BATCH_BYTES
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+volumes:
+  batchzip-data:

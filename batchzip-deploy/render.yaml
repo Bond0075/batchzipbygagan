@@ -1,0 +1,43 @@
+# BatchZip Downloader — Render Blueprint (one-click deploy)
+# render.com → New → Blueprint → connect your GitHub repo → Apply.
+# This provisions the web service exactly as BatchZip needs it.
+#
+# FREE PLAN NOTE: Render's free tier has no persistent disks, so job data
+# (files, ZIPs) lives on ephemeral storage and vanishes on restart/sleep.
+# That's fine for BatchZip: the user downloads the ZIP right away, and the
+# 24h retention sweeper keeps things tidy. Free services also sleep after
+# 15 min idle (first wake ~30s).
+#
+# For always-on + persistent storage, switch to a paid plan and add the
+# disk block below (uncomment it and set DATA_DIR to /data).
+
+services:
+  - type: web
+    name: batchzip-downloader
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # PORT is injected automatically by Render — do not set it here.
+      # Ephemeral data dir on the free plan (see note above).
+      - key: DATA_DIR
+        value: /tmp/batchzip-data
+      # Free-tier root disk is small; only refuse jobs below 200 MiB free.
+      - key: MIN_FREE_DISK_BYTES
+        value: "209715200"
+      # Shorter retention keeps the ephemeral disk lean on the free plan.
+      - key: BATCH_RETENTION_HOURS
+        value: "12"
+      # Never enable in production — test-only localhost SSRF bypass.
+      - key: SSRF_TEST_ALLOW_LOCALHOST
+        value: "false"
+    # --- Paid-plan disk (uncomment together with plan: starter or above) ---
+    # disk:
+    #   name: batchzip-data
+    #   mountPath: /data
+    #   sizeGB: 10
+    # ...and then change DATA_DIR above to /data
